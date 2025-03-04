@@ -1,4 +1,0 @@
-{
-    "api_endpoint": "https://api.openai.com/v1/chat/completions",
-    "api_key": "your_api_key_here"
-}
