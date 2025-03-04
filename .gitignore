@@ -1,59 +1,39 @@
-# Python-specific ignores
+# Ignore Python cache files
 __pycache__/
-*.py[cod]
-*$py.class
-
-# Virtual environment
-venv/
-env/
-.venv/
-.env/
-
-# Distribution / packaging
-dist/
-build/
-*.egg-info/
-
-# Screenshots directory
-screenshots/
-
-# IDE-specific files
-.vscode/
-.idea/
-*.sublime-project
-*.sublime-workspace
-
-# Logs and databases
-*.log
-*.sqlite3
-
-# OS generated files
-.DS_Store
-Thumbs.db
-
-# Environment and secret files
-.env
-*.env
-.secrets
-
-# Jupyter Notebook
-.ipynb_checkpoints
-
-# Compiled files
 *.pyc
 *.pyo
 *.pyd
 
-# Temporary files
+# Ignore virtual environment (if using one)
+venv/
+.env/
+
+# Ignore egg-info and build artifacts
+*.egg-info/
+build/
+dist/
+
+# Ignore logs and system files
+*.log
+.DS_Store
+Thumbs.db
+
+# Ignore configuration files
+config.json
+
+# Ignore screenshots
+screenshots/
+
+# Ignore dependencies installed via pip
+*.whl
+*.tar.gz
+*.zip
+
+# Ignore IDE/editor-specific files
+.vscode/
+.idea/
+*.sublime-workspace
+
+# Ignore system-generated metadata
 *.swp
 *~
-
-# Specific to your project
-config.json
-*.cfg
-
-# Dependency directories
-node_modules/
-
-# Backup files
-*.bak
