@@ -1,5 +1,5 @@
 {
-    "api_endpoint": "kddg",
+    "api_endpoint": "1245",
     "api_key": "",
-    "transparency": 83
+    "model_provider": "gemini"
 }

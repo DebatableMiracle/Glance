@@ -18,6 +18,7 @@ class FloatingWidget(QWidget):
         self.config = load_settings()
         self.api_endpoint = self.config.get("api_endpoint", "")
         self.api_key = self.config.get("api_key", "")
+        self.model_provider = self.config.get("model_provider", "openai")
         
         # Set window opacity
         self.setWindowOpacity(0.95)
@@ -146,10 +147,20 @@ class FloatingWidget(QWidget):
         settings_header.addWidget(back_button)
 
         form_layout = QFormLayout()
+        
+        # Add model provider selection
+        self.settings_model_provider = QLineEdit(self.model_provider)
+        self.settings_model_provider.setPlaceholderText("openai or gemini")
+        self.settings_model_provider.textChanged.connect(self.on_model_provider_changed)
+
         self.settings_api_endpoint = QLineEdit(self.api_endpoint)
+        self.settings_api_endpoint.setPlaceholderText("Required for OpenAI, not used for Gemini")
+        
         self.settings_api_key = QLineEdit(self.api_key)
         self.settings_api_key.setEchoMode(QLineEdit.Password)
+        self.settings_api_key.setPlaceholderText("Your API key")
 
+        form_layout.addRow("Model Provider:", self.settings_model_provider)
         form_layout.addRow("API Endpoint:", self.settings_api_endpoint)
         form_layout.addRow("API Key:", self.settings_api_key)
         
@@ -181,33 +192,56 @@ class FloatingWidget(QWidget):
             self.response_text.setText("Please enter a question.")
             return
 
-        screenshot_path = take_screenshot()
-        if not screenshot_path:
-            self.response_text.setText("Failed to take screenshot.")
-            return
-
         if not self.api_key:
             self.response_text.setText("Please configure API settings first.")
             return
 
-        self.worker = ApiWorker(self.api_endpoint, self.api_key, screenshot_path, query)
+        # Store current opacity
+        current_opacity = self.windowOpacity()
+        
+        # Make window fully transparent
+        self.setWindowOpacity(0)
+        
+        # Process events to ensure window updates
+        QApplication.processEvents()
+        
+        # Small delay to ensure window is hidden
+        from PyQt5.QtCore import QTimer
+        QTimer.singleShot(100, lambda: self.take_screenshot_and_process(query, current_opacity))
+
+    def take_screenshot_and_process(self, query, original_opacity):
+        # Take screenshot while window is invisible
+        screenshot_path = take_screenshot()
+        
+        # Restore window opacity
+        self.setWindowOpacity(original_opacity)
+        
+        if not screenshot_path:
+            self.response_text.setText("Failed to take screenshot.")
+            return
+
+        # Show loading state
+        self.response_text.setText("Processing your request...")
+        self.query_input.setEnabled(False)
+
+        self.worker = ApiWorker(self.api_endpoint, self.api_key, screenshot_path, query, self.model_provider)
         self.worker.finished.connect(self.display_response)
-        self.worker.error.connect(lambda e: self.response_text.setText(f"Error: {e}"))
+        self.worker.error.connect(self.handle_error)
         self.worker.start()
 
     def display_response(self, response):
-        self.response_text.setText(response.get("choices", [{}])[0].get("message", {}).get("content", "No response"))
+        self.query_input.setEnabled(True)
+        if self.model_provider == 'gemini':
+            # Gemini response is already formatted
+            content = response.get("choices", [{}])[0].get("message", {}).get("content", "No response")
+        else:
+            # OpenAI response
+            content = response.get("choices", [{}])[0].get("message", {}).get("content", "No response")
+        self.response_text.setText(content)
 
-    def save_settings(self):
-        self.api_endpoint = self.settings_api_endpoint.text()
-        self.api_key = self.settings_api_key.text()
-        
-        save_settings({
-            "api_endpoint": self.api_endpoint,
-            "api_key": self.api_key
-        })
-
-
+    def handle_error(self, error_msg):
+        self.query_input.setEnabled(True)
+        self.response_text.setText(f"Error: {error_msg}")
 
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
@@ -244,51 +278,31 @@ class FloatingWidget(QWidget):
     def show_main_page(self):
         self.stacked_widget.setCurrentWidget(self.main_page)
 
+    def on_model_provider_changed(self, text):
+        """Update UI based on selected model provider"""
+        if text.lower() == 'gemini':
+            self.settings_api_endpoint.setEnabled(False)
+            self.settings_api_endpoint.setPlaceholderText("Not required for Gemini API")
+        else:
+            self.settings_api_endpoint.setEnabled(True)
+            self.settings_api_endpoint.setPlaceholderText("Required for OpenAI API")
+
     def save_settings(self):
+        # Validate model provider
+        model_provider = self.settings_model_provider.text().lower()
+        if model_provider not in ['openai', 'gemini']:
+            self.response_text.setText("Error: Model provider must be either 'openai' or 'gemini'")
+            return
+
         settings = {
             "api_endpoint": self.settings_api_endpoint.text(),
             "api_key": self.settings_api_key.text(),
-            "transparency": self.transparency_slider.value()
+            "model_provider": model_provider
         }
+        
         self.api_endpoint = settings["api_endpoint"]
         self.api_key = settings["api_key"]
+        self.model_provider = settings["model_provider"]
+        
         save_settings(settings)
         self.show_main_page()
-
-    def update_transparency(self, value):
-        opacity = value / 100.0
-        # Update the stylesheet with new background opacity
-        self.setStyleSheet("""
-            QMainWindow {
-                background: rgba(30, 30, 30, %f);
-            }
-            QWidget { 
-                background: transparent;
-                color: white; 
-            }
-            QTextEdit { 
-                background: rgba(45, 45, 45, %f); 
-                border-radius: 8px; 
-                padding: 8px; 
-                border: 1px solid rgba(0, 128, 128, 0.3);
-                font-size: 13px;
-                selection-background-color: rgba(0, 128, 128, 0.3);
-            }
-            QPushButton { 
-                background: rgba(0, 128, 128, 0.7);
-                border-radius: 8px; 
-                padding: 10px 15px; 
-                border: none;
-                font-size: 13px;
-                font-weight: bold;
-                min-width: 80px;
-            }
-            QPushButton:hover { 
-                background: rgba(0, 148, 148, 0.8); 
-            }
-            #centralWidget {
-                background: rgba(30, 30, 30, %f);
-                border-radius: 10px;
-                margin: 0px;
-            }
-        """ % (opacity, opacity, opacity))

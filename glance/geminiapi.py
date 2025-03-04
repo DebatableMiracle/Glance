@@ -115,26 +115,44 @@ class GeminiAPI:
             
         Returns:
             str: Gemini's response about the image
+            
+        Raises:
+            ValueError: If image validation fails
+            genai.types.generation_types.GenerationError: If Gemini API call fails
+            Exception: For other unexpected errors
         """
         try:
             # Validate and process image
             processed_image, mime_type = self._validate_image(image_data, scale=scale)
             
             # Send to Gemini
-            response = self.client.models.generate_content(
-                model=self.model,
-                contents=[
-                    query,
-                    types.Part.from_bytes(data=processed_image, mime_type=mime_type)
-                ]
-            )
-            return response.text
+            try:
+                response = self.client.models.generate_content(
+                    model=self.model,
+                    contents=[
+                        query,
+                        types.Part.from_bytes(data=processed_image, mime_type=mime_type)
+                    ]
+                )
+                return response.text
+            except genai.types.generation_types.GenerationError as e:
+                if "quota exceeded" in str(e).lower():
+                    raise Exception("API quota exceeded. Please try again later.")
+                elif "rate limit" in str(e).lower():
+                    raise Exception("Rate limit reached. Please wait a moment and try again.")
+                else:
+                    raise Exception(f"Gemini API error: {str(e)}")
+            
         except ValueError as e:
-            return f"Image validation error: {str(e)}"
-        except genai.types.generation_types.GenerationError as e:
-            return f"Gemini API error: {str(e)}"
+            if "Invalid image format" in str(e):
+                raise ValueError("Unsupported image format. Please use PNG, JPEG, or GIF.")
+            elif "too large" in str(e).lower():
+                raise ValueError("Image is too large. Maximum size is 4MB.")
+            else:
+                raise ValueError(f"Image validation error: {str(e)}")
         except Exception as e:
-            return f"Unexpected error: {str(e)}"
+            # Re-raise the exception to be handled by the caller
+            raise
 
     def analyze_image_from_url(self, image_url: str, query: str = "What is in this image?", scale: bool = True) -> str:
         """
