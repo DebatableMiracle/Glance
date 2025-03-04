@@ -1,0 +1,5 @@
+PyQt5>=5.15.0
+qt-material>=2.14
+Pillow>=10.0.0
+requests>=2.31.0
+google-generative-ai>=0.3.0
