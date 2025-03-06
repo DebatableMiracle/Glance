@@ -37,3 +37,6 @@ screenshots/
 # Ignore system-generated metadata
 *.swp
 *~
+
+#ignore random files idk what they are,  that start with =
+=*

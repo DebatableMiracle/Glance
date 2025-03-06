@@ -34,35 +34,32 @@ class FloatingWidget(QWidget):
         import os
         if os.environ.get('XDG_SESSION_TYPE') != 'wayland':
             self.setAttribute(Qt.WA_TranslucentBackground)
-        
         # Enable resizing
         self.setMinimumSize(300, 200)
         
+        # Apply styling with custom bckground and muted colors
         # Apply styling with custom background and muted colors
-        apply_stylesheet(self, theme='dark_teal.xml')
+        apply_stylesheet(self, theme='dark_blue.xml')
         self.setStyleSheet(self.styleSheet() + """
-            QWidget {
-                background-color: rgba(33, 33, 33, 0.6);
-            }
-            QPushButton {
-                background-color: rgba(38, 50, 56, 0.8);
-                color: #adbdc1;
-            }
-            QPushButton:hover {
-                background-color: rgba(55, 71, 79, 0.8);
-            }
-            QTextEdit, QLineEdit {
-                background-color: rgba(38, 50, 56, 0.85);
-                color: #adbdc1;
-                border: 1px solid rgba(55, 71, 79, 0.85);
-            }
-            QLabel {
-                color: #adbdc1;
-            }
-        """)
-        
-
-
+    QWidget {
+        background-color: rgba(15, 20, 30, 0.6);
+    }
+    QPushButton {
+        background-color: rgba(20, 30, 45, 0.8);
+        color: #a1c4e3;
+    }   
+    QPushButton:hover {
+        background-color: rgba(30, 40, 55, 0.8);
+    }
+    QTextEdit, QLineEdit {
+        background-color: rgba(20, 30, 45, 0.85);
+        color: #a1c4e3;
+        border: 1px solid rgba(35, 45, 60, 0.85);
+    }
+    QLabel {
+        color: #a1c4e3;
+    }
+""")
         # Initialize stacked widget for multiple pages
         self.stacked_widget = QStackedWidget()
         
