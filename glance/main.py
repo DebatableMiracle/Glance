@@ -1,7 +1,9 @@
 import sys
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtCore import Qt, QTimer
-from glance.gui import FloatingWidget
+
+# Import from modular structure
+from widgets.floating_widget import FloatingWidget
 from glance.tray import SystemTray
 
 class MainApp:
@@ -18,6 +20,7 @@ class MainApp:
         
         # Position window after creating but before showing
         self.position_window()
+        
         self.window.show()
         
         # Ensure window stays on top
@@ -60,6 +63,7 @@ class MainApp:
     
     def run(self):
         return self.app.exec_()
+
 
 if __name__ == "__main__":
     app = MainApp()
